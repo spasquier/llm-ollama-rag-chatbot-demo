@@ -21,6 +21,7 @@ ollama run llama3.2:3b-instruct-q4_K_M
 
 ```bash
 python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
