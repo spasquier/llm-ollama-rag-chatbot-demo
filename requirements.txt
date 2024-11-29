@@ -3,4 +3,4 @@ langchain-core==0.3.21
 pdfminer.six==20240706
 gpt4all==2.8.2
 chromadb==0.5.20
-langchain-ollama=0.2.0
+langchain-ollama==0.2.0

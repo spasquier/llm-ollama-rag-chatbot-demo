@@ -1,4 +1,4 @@
-#ollama-rag-chatbot.py
+# ollama-rag-chatbot.py
 
 from langchain_community.document_loaders import PDFMinerLoader
 from langchain_community.vectorstores import Chroma
@@ -11,6 +11,8 @@ from langchain_ollama import OllamaLLM
 
 import sys
 import os
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 class SuppressStdout:
     def __enter__(self):
@@ -24,17 +26,16 @@ class SuppressStdout:
         sys.stdout = self._original_stdout
         sys.stderr = self._original_stderr
 
-# load the pdf and split it into chunks
-loader = PDFMinerLoader("knowledge-base/2023IRDS_Perspectives.pdf")
+# Load pdf with PDFMinerLoader
+loader = PDFMinerLoader("kb/2023IRDS_Perspectives.pdf")
 data = loader.load()
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
-
 with SuppressStdout():
     vectorstore = Chroma.from_documents(documents=all_splits, embedding=GPT4AllEmbeddings())
 
+# Wait for user query input
 while True:
     query = input("\nQuery: ")
     if query == "exit":
@@ -42,10 +43,10 @@ while True:
     if query.strip() == "":
         continue
 
-    # Prompt
+    # Create a QA chain 
     template = """Use the following pieces of context to answer the question at the end.
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
-    Use three sentences maximum and keep the answer as concise as possible.
+    Use five sentences maximum and keep the answer as concise as possible.
     {context}
     Question: {question}
     Helpful Answer:"""
@@ -53,7 +54,6 @@ while True:
         input_variables=["context", "question"],
         template=template,
     )
-
     llm = OllamaLLM(model="llama3.1:8b-instruct-q8_0", callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]))
     qa_chain = RetrievalQA.from_chain_type(
         llm,
@@ -61,4 +61,5 @@ while True:
         chain_type_kwargs={"prompt": QA_CHAIN_PROMPT},
     )
 
+    # Run the QA chain using the user query
     result = qa_chain({"query": query})
